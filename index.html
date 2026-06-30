@@ -2,88 +2,15 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Múltiples cortes con MediaElement</title>
+  <title>Mini Newtone JS</title>
 </head>
 <body>
-  <h2>🎶 Cortar audio en múltiples fragmentos</h2>
+  <h2>🎶 Prototipo estilo Newtone</h2>
   <input type="file" id="fileInput" accept="audio/*"><br><br>
-  <button id="addRegionBtn">➕ Añadir corte</button>
+  <button id="addCutBtn">➕ Añadir corte en tiempo actual</button>
   
-  <div id="waveform"></div>
-  <div id="clips"></div> <!-- Aquí aparecerán los audios cortados -->
+  <div id="clips"></div>
 
-  <script type="module">
-    import WaveSurfer from 'https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.esm.js';
-    import RegionsPlugin from 'https://unpkg.com/wavesurfer.js@7/dist/plugins/regions.esm.js';
-
-    const regionsPlugin = RegionsPlugin.create();
-
-    const wavesurfer = WaveSurfer.create({
-      container: '#waveform',
-      waveColor: 'violet',
-      progressColor: 'purple',
-      backend: 'MediaElement', // mantiene pitch
-      plugins: [regionsPlugin]
-    });
-
-    // Cargar archivo
-    document.getElementById('fileInput').addEventListener('change', e => {
-      const file = e.target.files[0];
-      if (file) {
-        const url = URL.createObjectURL(file);
-        wavesurfer.load(url);
-      }
-    });
-
-    // Añadir región manualmente
-    document.getElementById('addRegionBtn').addEventListener('click', () => {
-      const currentTime = wavesurfer.getCurrentTime();
-      regionsPlugin.addRegion({
-        start: currentTime,
-        end: currentTime + 3,
-        color: 'rgba(0, 200, 0, 0.3)',
-        drag: true,
-        resize: true
-      });
-    });
-
-    // Al crear región → generar clip independiente
-    wavesurfer.on('region-created', region => {
-      const clipsDiv = document.getElementById('clips');
-
-      // Crear un nuevo <audio> que reproduce solo el fragmento
-      const audioEl = document.createElement('audio');
-      audioEl.controls = true;
-      audioEl.src = wavesurfer.backend.media.src; // mismo archivo
-
-      // Reproducir solo el fragmento definido
-      audioEl.addEventListener('play', () => {
-        audioEl.currentTime = region.start;
-        const stopTime = region.end;
-        const checker = setInterval(() => {
-          if (audioEl.currentTime >= stopTime) {
-            audioEl.pause();
-            clearInterval(checker);
-          }
-        }, 200);
-      });
-
-      // Control de velocidad
-      const rateInput = document.createElement('input');
-      rateInput.type = 'number';
-      rateInput.step = '0.1';
-      rateInput.value = '1';
-      rateInput.addEventListener('change', () => {
-        audioEl.playbackRate = parseFloat(rateInput.value);
-        audioEl.preservesPitch = true; // mantener tono
-      });
-
-      const wrapper = document.createElement('div');
-      wrapper.innerHTML = `<p>Clip ${region.id} (de ${region.start.toFixed(2)}s a ${region.end.toFixed(2)}s)</p>`;
-      wrapper.appendChild(audioEl);
-      wrapper.appendChild(rateInput);
-      clipsDiv.appendChild(wrapper);
-    });
-  </script>
+  <script src="newtone.js"></script>
 </body>
 </html>
