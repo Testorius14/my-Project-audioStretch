@@ -1,36 +1,65 @@
-let audioSrc = null;
-let cuts = []; // lista de cortes definidos
-
 const fileInput = document.getElementById('fileInput');
-const addCutBtn = document.getElementById('addCutBtn');
+const canvas = document.getElementById('waveform');
+const ctx = canvas.getContext('2d');
 const clipsDiv = document.getElementById('clips');
 
-// Cargar archivo
-fileInput.addEventListener('change', e => {
+let audioBuffer = null;
+let audioSrc = null;
+let startX = null;
+let endX = null;
+
+// Cargar archivo y dibujar waveform
+fileInput.addEventListener('change', async e => {
   const file = e.target.files[0];
-  if (file) {
-    audioSrc = URL.createObjectURL(file);
-    alert("Archivo cargado. Usa 'Añadir corte' para definir fragmentos.");
+  if (!file) return;
+  audioSrc = URL.createObjectURL(file);
+
+  const audioCtx = new AudioContext();
+  const arrayBuffer = await file.arrayBuffer();
+  audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+  drawWaveform(audioBuffer);
+});
+
+// Dibujar waveform en canvas
+function drawWaveform(buffer) {
+  const data = buffer.getChannelData(0);
+  const step = Math.ceil(data.length / canvas.width);
+  const amp = canvas.height / 2;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.beginPath();
+  for (let i = 0; i < canvas.width; i++) {
+    let min = 1.0, max = -1.0;
+    for (let j = 0; j < step; j++) {
+      const datum = data[i * step + j];
+      if (datum < min) min = datum;
+      if (datum > max) max = datum;
+    }
+    ctx.moveTo(i, (1 + min) * amp);
+    ctx.lineTo(i, (1 + max) * amp);
+  }
+  ctx.stroke();
+}
+
+// Selección con el mouse
+canvas.addEventListener('mousedown', e => {
+  startX = e.offsetX;
+});
+canvas.addEventListener('mouseup', e => {
+  endX = e.offsetX;
+  if (audioBuffer) {
+    const startTime = (startX / canvas.width) * audioBuffer.duration;
+    const endTime = (endX / canvas.width) * audioBuffer.duration;
+    createClip(startTime, endTime);
   }
 });
 
-// Añadir corte en el tiempo actual (simulado)
-addCutBtn.addEventListener('click', () => {
-  if (!audioSrc) return alert("Primero carga un archivo de audio.");
-  
-  // Simulamos un corte en segundos (ejemplo: cada click avanza 5s)
-  const start = cuts.length * 5;
-  const end = start + 5;
-
-  const region = { id: cuts.length + 1, start, end };
-  cuts.push(region);
-  renderClip(region);
-});
-
-// Renderizar clip independiente
-function renderClip(region) {
+// Crear clip independiente
+function createClip(start, end) {
   const wrapper = document.createElement('div');
-  wrapper.innerHTML = `<p>Clip ${region.id} (de ${region.start}s a ${region.end}s)</p>`;
+  wrapper.className = 'clip';
+  wrapper.innerHTML = `<p>Clip (de ${start.toFixed(2)}s a ${end.toFixed(2)}s)</p>`;
 
   const audioEl = document.createElement('audio');
   audioEl.controls = true;
@@ -38,9 +67,9 @@ function renderClip(region) {
 
   // Reproducir solo el fragmento
   audioEl.addEventListener('play', () => {
-    audioEl.currentTime = region.start;
+    audioEl.currentTime = start;
     const checker = setInterval(() => {
-      if (audioEl.currentTime >= region.end) {
+      if (audioEl.currentTime >= end) {
         audioEl.pause();
         clearInterval(checker);
       }
