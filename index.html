@@ -3,12 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <title>Mini Newtone JS</title>
+  <style>
+    #waveform {
+      border: 1px solid black;
+      width: 600px;
+      height: 150px;
+      cursor: crosshair;
+    }
+    .clip {
+      margin: 10px 0;
+      padding: 5px;
+      border: 1px solid #ccc;
+    }
+  </style>
 </head>
 <body>
   <h2>🎶 Prototipo estilo Newtone</h2>
   <input type="file" id="fileInput" accept="audio/*"><br><br>
-  <button id="addCutBtn">➕ Añadir corte en tiempo actual</button>
-  
+  <canvas id="waveform"></canvas>
   <div id="clips"></div>
 
   <script src="newtone.js"></script>
