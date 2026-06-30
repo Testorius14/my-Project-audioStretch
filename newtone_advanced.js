@@ -58,21 +58,45 @@ canvas.addEventListener('mouseup', e => {
 });
 
 // Crear clip visual en timeline
-function createClip(start, end) {
+function createClip(start, end, rate = 1) {
   const clipEl = document.createElement('div');
   clipEl.className = 'clip';
   clipEl.style.left = `${clips.length * 100}px`;
   clipEl.style.top = '50px';
-  clipEl.style.width = '80px';
-  clipEl.textContent = `Clip ${clips.length+1}`;
+  clipEl.style.width = '100px';
 
-  const clip = { id: clips.length+1, start, end, element: clipEl };
+  const clip = { id: Date.now(), start, end, rate, element: clipEl };
   clips.push(clip);
 
-  // Hacer arrastrable
+  clipEl.innerHTML = `
+    <p>Clip ${clip.id}</p>
+    <div class="controls">
+      Velocidad: <input type="number" step="0.1" value="${rate}" class="rateInput">
+      <button class="dupBtn">📄 Duplicar</button>
+      <button class="delBtn">❌ Eliminar</button>
+    </div>
+  `;
+
+  // Arrastrar
   clipEl.draggable = true;
   clipEl.addEventListener('dragstart', e => {
     e.dataTransfer.setData('text/plain', clip.id);
+  });
+
+  // Cambiar velocidad
+  clipEl.querySelector('.rateInput').addEventListener('change', e => {
+    clip.rate = parseFloat(e.target.value);
+  });
+
+  // Duplicar
+  clipEl.querySelector('.dupBtn').addEventListener('click', () => {
+    createClip(clip.start, clip.end, clip.rate);
+  });
+
+  // Eliminar
+  clipEl.querySelector('.delBtn').addEventListener('click', () => {
+    clips = clips.filter(c => c.id !== clip.id);
+    clipEl.remove();
   });
 
   timeline.appendChild(clipEl);
@@ -104,7 +128,7 @@ playAllBtn.addEventListener('click', () => {
     const clip = ordered[index];
     const audioEl = new Audio(audioSrc);
     audioEl.currentTime = clip.start;
-    audioEl.playbackRate = 1;
+    audioEl.playbackRate = clip.rate;
     audioEl.preservesPitch = true;
     audioEl.play();
 
